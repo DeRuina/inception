@@ -1,8 +1,3 @@
-YML_PATH = srcs/docker-compose.yml
-
-
-.PHONY: up down ps clean fclean prune re all reset info
-
 all:
 	if ! grep -q "druina.42.fr" /etc/hosts; then \
 		echo "127.0.0.1 druina.42.fr" >> /etc/hosts; \
@@ -12,33 +7,23 @@ all:
 	fi
 	mkdir -p /home/druina/data/mariadb-data
 	mkdir -p /home/druina/data/wordpress-data
-	docker-compose -f $(YML_PATH) up -d
-
-up:
-	docker-compose -f $(YML_PATH) up -d
-
-down:
-	docker-compose -f $(YML_PATH) down
-
-ps:
-	docker-compose -f $(YML_PATH) ps
-
+	docker-compose -f srcs/docker-compose.yml build
+	docker-compose -f srcs/docker-compose.yml up -d
+	
 clean:
-	docker-compose -f $(YML_PATH) down --rmi all -v
+	docker-compose -f srcs/docker-compose.yml down --rmi all -v
 
 fclean: clean
-	@if [ -d $(FILES_PATH) ]; then \
-		sudo rm -rf $(FILES_PATH); \
-	fi;
-
-prune:
-	docker system prune --all --force --volumes
+	rm -rf /home/druina/data/mariadb-data
+	rm -rf /home/druina/data/wordpress-data
+	docker system prune -f
 
 re: fclean all
 
-rm_all:
-	docker stop $$(docker ps -aq);
-	docker rm $$(docker ps -qa);
-	docker rmi -f $$(docker images -qa);
-	docker volume rm $$(docker volume ls -q);
-	
+up:
+	docker-compose -f srcs/docker-compose.yml up -d
+
+down:
+	docker-compose -f srcs/docker-compose.yml down
+
+.PHONY: all clean fclean re up down

@@ -1,32 +1,23 @@
-# ==> Create a container from DEBIAN
-FROM debian:buster
+FROM alpine:3.18
 
-# ==> MAJ of apt-get, to get the last version of packages
-RUN apt-get update && apt-get upgrade -y
+# Install NGINX and SSL
+RUN apk update && apk add --no-cache nginx openssl
 
-# ==> Install NGinx server 
-RUN apt install nginx -y
+# Expose port for HTTPS
+EXPOSE 443
 
-# ==> Install OpenSSL to generate a self-signed certificate
-RUN apt-get install openssl -y
+# Create folders for cert
+RUN mkdir -p /run/nginx /etc/nginx/ssl
 
-# ==> Create the repertory for the certificate and the key
-RUN mkdir -p /etc/nginx/ssl
+# SSL cert & key
+RUN openssl req -newkey rsa:2048 -x509 -sha256 -days 365 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FI/ST=Helsinki/L=Helsinki/O=42/OU=Hive/CN=druina.42.fr"
 
-# ==> Generate a self-signed certificate and key
-RUN openssl req -newkey rsa:4096 -days 42 -nodes -x509 \
--subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=druina.42.fr/UID=druina" \
--out /etc/ssl/certs/inception.crt \
--keyout /etc/ssl/private/inception.key
+# Add a new user within the container
+RUN adduser -D -H -s /sbin/nologin -g www-data -G www-data www-data
 
-# ==> Copy the nginx.conf file into the container
-COPY conf/nginx.conf /etc/nginx/nginx.conf
+# Copy NGINX conf
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
+RUN chmod 644 /etc/nginx/nginx.conf
 
-# ==> Use chmod to give the right to the user to edit html folder
-RUN chmod 755 /var/www/html
-RUN chown -R www-data:www-data /var/www/html
-
-# ==> Start the nginx service
-CMD [ "nginx", "-g", "daemon off;" ]
-
-
+# Start NGINX
+CMD ["nginx", "-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]

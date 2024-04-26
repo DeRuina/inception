@@ -1,16 +1,18 @@
-FROM debian:buster
+FROM alpine:3.18
 
-# install the program
-RUN apt update && apt upgrade -y && apt install -y mariadb-server
+# Install mariadb
+RUN apk update && apk add --no-cache mariadb mariadb-client
 
-# mariadb config
-COPY conf/50-server.cnf	/etc/mysql/mariadb.conf.d/50-server.cnf
-
-# copy the script
-COPY conf/mariadb_script.sh /mariadb_script.sh
-
-# execute the script
-ENTRYPOINT ["bash", "mariadb_script.sh"]
-
-# expose the only port allowed (MySQL)
+# Expose port 3306
 EXPOSE 3306
+
+# Copy mariadb conf
+COPY conf/mariadb.cnf /etc/my.cnf.d/mariadb.cnf
+RUN chmod 644 /etc/my.cnf.d/mariadb.cnf
+
+# Copy mariadb script
+COPY conf/mariadb_script.sh /tmp/mariadb_script.sh
+RUN chmod +x /tmp/mariadb_script.sh
+
+# Run mariadb script
+ENTRYPOINT ["sh", "/tmp/mariadb_script.sh"]

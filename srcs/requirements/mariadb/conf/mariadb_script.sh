@@ -1,27 +1,31 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-# Start MariaDB
-service mysql start;
+# Prepare directories and rights
+mkdir -p /var/lib/mysql /run/mysqld /var/log/mysql
+chown -R mysql:mysql /run/mysqld
+chown -R mysql:mysql /var/log/mysql
+chown -R mysql:mysql /var/lib/mysql
 
-# create database (if does not exist)
-mysql -e "CREATE DATABASE IF NOT EXISTS \`${SQL_DATABASE}\`;"
+# init database
+mysql_install_db --basedir=/usr --datadir=/var/lib/mysql --user=mysql --rpm > /dev/null
 
-# create user and password (if does not exist)
-mysql -e "CREATE USER IF NOT EXISTS \`${SQL_USER}\`@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';"
+# Enforce root pw, create db, add user, give rights
+mysqld --user=mysql --bootstrap << EOF
+USE mysql;
+FLUSH PRIVILEGES;
 
-# give all privileges to the user on the database
-mysql -e "GRANT ALL PRIVILEGES ON \`${SQL_DATABASE}\`.* TO \`${SQL_USER}\`@'%' IDENTIFIED BY '${SQL_PASSWORD}';"
+DELETE FROM mysql.user WHERE User='';
+DROP DATABASE IF EXISTS test; 
+DELETE FROM mysql.db WHERE Db='test';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 
-# modify sql database
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';"
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
+CREATE DATABASE $WORDPRESS_DB_NAME CHARACTER SET utf8 COLLATE utf8_general_ci;
+CREATE USER '$WORDPRESS_DB_USER'@'%' IDENTIFIED by '$WORDPRESS_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON $WORDPRESS_DB_NAME.* TO '$WORDPRESS_DB_USER'@'%';
+GRANT ALL PRIVILEGES ON *.* TO '$WORDPRESS_DB_USER'@'%' IDENTIFIED BY '$WORDPRESS_DB_PASSWORD' WITH GRANT OPTION;
+GRANT SELECT ON mysql.* TO '$WORDPRESS_DB_USER'@'%';
+FLUSH PRIVILEGES;
+EOF
 
-# flush privileges
-mysql -e "FLUSH PRIVILEGES;"
-
-# shutdown
-mysqladmin -u root -p$SQL_ROOT_PASSWORD shutdown
-
-# use exec 
-exec mysqld_safe
-
-
+exec mysqld --defaults-file=/etc/my.cnf.d/mariadb.cnf

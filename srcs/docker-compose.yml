@@ -1,66 +1,71 @@
-version: '3'
+version: '3.8'
 
 services:
-  mariadb:
-    container_name: mariadb
-    volumes: 
-      - mariadb:/var/lib/mysql
-    networks:
-      - inception
-    build: 
-      context: requirements/mariadb
+  nginx:
+    build:
+      context: ./requirements/nginx
       dockerfile: Dockerfile
-    env_file: .env
-    restart: on-failure 
-    expose:
-      - "3306"
-
-  nginx:          
-    container_name: nginx 
-    volumes:
-      - wordpress:/var/www/wordpress
-    networks:
-      - inception
+    image: nginx
+    container_name: nginx-cont
+    ports:
+      - 443:443
     depends_on:
       - wordpress
-    build: 
-      context: requirements/nginx
-      dockerfile: Dockerfile
-    env_file: .env
-    ports:
-      - "443:443"
-    restart: on-failure
+    networks:
+      - mynetwork
+    restart: always
+    volumes:
+      - wordpress-data:/var/www/html
 
   wordpress:
-    container_name: wordpress
-    env_file: .env
-    volumes:
-    - wordpress:/var/www/wordpress
-    networks:
-      - inception
-    build: 
-      context: requirements/wordpress
+    build:
+      context: ./requirements/wordpress/
       dockerfile: Dockerfile
-    depends_on:    
+    image: wordpress:release
+    container_name: wordpress-cont
+    ports:
+      - "9000:9000"
+    env_file: .env
+    networks:
+      - mynetwork
+    restart: always
+    depends_on:
       - mariadb
-    restart: on-failure
-    expose: 
-      - "9000"
+    volumes:
+      - wordpress-data:/var/www/html
+
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    image: mariadb:release
+    container_name: mariadb-cont
+    ports:
+      - "3306:3306"
+    env_file: .env
+    restart: always
+    networks:
+      - mynetwork
+    volumes:
+      - mariadb-data:/var/lib/mysql
 
 volumes:
-  wordpress:
+  mariadb-data:
+    name: mariadb-data
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/home/druina/data/wordpress'
-  mariadb:
+      type: none
+      device: /home/druina/data/mariadb-data
+      o: bind
+
+  wordpress-data:
+    name: wordpress-data
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/home/druina/data/mariadb'
+      type: none
+      device: /home/druina/data/wordpress-data
+      o: bind
 
 networks:
-    inception:
-      driver: bridge
+  mynetwork:
+    name: inception
