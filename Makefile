@@ -12,19 +12,19 @@ all:
 	fi
 	mkdir -p /home/druina/data/mariadb-data
 	mkdir -p /home/druina/data/wordpress-data
-	docker compose -f $(YML_PATH) up -d
+	docker-compose -f $(YML_PATH) up -d
 
 up:
-	docker compose -f $(YML_PATH) up -d
+	docker-compose -f $(YML_PATH) up -d
 
 down:
-	docker compose -f $(YML_PATH) down
+	docker-compose -f $(YML_PATH) down
 
 ps:
-	docker compose -f $(YML_PATH) ps
+	docker-compose -f $(YML_PATH) ps
 
 clean:
-	docker compose -f $(YML_PATH) down --rmi all -v
+	docker-compose -f $(YML_PATH) down --rmi all -v
 
 fclean: clean
 	@if [ -d $(FILES_PATH) ]; then \
