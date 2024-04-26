@@ -32,11 +32,6 @@ fclean: clean
 prune:
 	docker system prune --all --force --volumes
 
-reset:
-	docker stop $(docker ps -a -q); docker rm $(docker ps -qa); \
-	docker rmi -f $(docker images -qa); docker volume rm $(docker volume ls -q); \
-	docker network rm $(docker network ls -q)
-
 re: fclean all
 
 rm_all:
