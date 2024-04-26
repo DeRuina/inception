@@ -1,15 +1,17 @@
 YML_PATH = srcs/docker-compose.yml
-FILES_PATH = /home/druina/data
+
 
 .PHONY: up down ps clean fclean prune re all reset info
 
 all:
-	@if [ ! -d "$(FILES_PATH)/mariadb" ]; then \
-		mkdir -p $(FILES_PATH)/mariadb; \
+	if ! grep -q "druina.42.fr" /etc/hosts; then \
+		echo "127.0.0.1 druina.42.fr" >> /etc/hosts; \
 	fi
-	@if [ ! -d "$(FILES_PATH)/wordpress" ]; then \
-		mkdir -p $(FILES_PATH)/wordpress; \
+	if ! grep -q "www.druina.42.fr" /etc/hosts; then \
+		echo "127.0.0.1 www.druina.42.fr" >> /etc/hosts; \
 	fi
+	mkdir -p /home/druina/data/mariadb-data
+	mkdir -p /home/druina/data/wordpress-data
 	docker compose -f $(YML_PATH) up -d
 
 up:
