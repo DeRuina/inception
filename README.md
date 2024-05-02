@@ -1,4 +1,4 @@
-# Inception Project
+# Inception
 
 ## Overview
 
